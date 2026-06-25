@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QRNeon - Magic Proposals &amp; Pro Sharing</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+        
+        :root {
+            --neon-cyan: #00f5ff;
+            --neon-pink: #ff00ff;
+            --neon-purple: #9d4edd;
+            --dark-bg: #0a0a0a;
+            --card-bg: #121212;
+        }
+        
+        * { margin:0; padding:0; box-sizing:border-box; }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--dark-bg);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+            background-image: 
+                radial-gradient(circle at 25% 30%, rgba(0,245,255,0.1) 0%, transparent 60%),
+                radial-gradient(circle at 75% 70%, rgba(255,0,255,0.1) 0%, transparent 60%);
+        }
+        
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 28px;
+            box-shadow: 0 0 80px -15px var(--neon-cyan), 0 0 60px -15px var(--neon-pink);
+            overflow: hidden;
+            border: 1px solid rgba(0,245,255,0.25);
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1a1a2e, #0f0f1e);
+            padding: 3.5rem 2rem 2.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, rgba(0,245,255,0.2) 0%, transparent 70%);
+            animation: pulse 6s infinite ease-in-out;
+        }
+        
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.4rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 40px rgba(0,245,255,0.7);
+        }
+        
+        .subtitle { color: #bbb; font-size: 1.25rem; }
+        
+        .mode-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 1.5rem 0;
+        }
+        
+        .mode-btn {
+            padding: 12px 28px;
+            border-radius: 9999px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .mode-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: translateX(-150%);
+            transition: transform 0.6s;
+        }
+        
+        .mode-btn:hover::before {
+            transform: translateX(300%);
+        }
+        
+        .mode-btn.active {
+            background: var(--neon-pink);
+            color: #000;
+            box-shadow: 0 0 30px var(--neon-pink),
+                        0 0 50px var(--neon-pink);
+            transform: scale(1.08);
+        }
+        
+        .mode-btn:hover:not(.active) {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px var(--neon-cyan);
+        }
+        
+        .main { padding: 2.8rem 2.5rem; }
+        
+        .templates {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 1.8rem;
+        }
+        
+        .template-chip {
+            background: rgba(157,78,221,0.15);
+            color: var(--neon-purple);
+            padding: 8px 18px;
+            border-radius: 9999px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 1px solid rgba(157,78,221,0.4);
+            transition: all 0.4s ease;
+        }
+        
+        .template-chip:hover {
+            background: var(--neon-purple);
+            color: white;
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 0 20px var(--neon-purple);
+        }
+        
+        .input-group { margin-bottom: 1.8rem; }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--neon-cyan);
+            letter-spacing: 1px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 16px 20px;
+            background: #1e1e2e;
+            border: 2px solid rgba(0,245,255,0.35);
+            border-radius: 18px;
+            font-size: 1.1rem;
+            color: #fff;
+            transition: all 0.4s ease;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 0 5px rgba(0,245,255,0.25),
+                        0 0 30px rgba(0,245,255,0.5);
+            transform: translateY(-1px);
+        }
+        
+        .options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 9999px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 40%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: 0.6s;
+        }
+        
+        .btn:hover::before {
+            left: 120%;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, var(--neon-cyan), #00ffaa);
+            color: #000;
+            box-shadow: 0 0 30px var(--neon-cyan);
+            width: 100%;
+        }
+        
+        .btn-primary:hover {
+            transform: scale(1.06) translateY(-4px);
+            box-shadow: 0 0 50px var(--neon-pink), 0 10px 20px rgba(0,0,0,0.4);
+        }
+        
+        #qrcode {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 340px;
+            background: #0a0a0a;
+            border-radius: 24px;
+            margin: 2.5rem 0;
+            padding: 35px;
+            border: 3px solid rgba(0,245,255,0.4);
+            overflow: hidden;
+        }
+        
+        #qrcode::after {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: 0;
+            width: 100%;
+            height: 30%;
+            background: linear-gradient(transparent, rgba(255,255,255,0.25), transparent);
+            animation: scan 4s linear infinite;
+            opacity: 0;
+            transition: opacity 0.6s;
+        }
+        
+        #qrcode.generated::after { opacity: 0.6; }
+        
+        @keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(400%); } }
+        
+        .qr-glow { animation: qrPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes qrPop { 0% { transform: scale(0.6) rotate(-12deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+        
+        .actions, .share-buttons {
+            display: none;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1.5rem 0;
+        }
+        
+        .share-btn {
+            width: 62px; height: 62px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            box-shadow: 0 0 20px rgba(0,245,255,0.5);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .share-btn:hover {
+            transform: scale(1.25) rotate(15deg);
+            box-shadow: 0 0 35px var(--neon-pink);
+        }
+        
+        .history { margin-top: 3.5rem; }
+        .history h3 { color: var(--neon-cyan); text-align:center; margin-bottom:1.5rem; }
+        
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .history-item {
+            transition: all 0.4s ease;
+        }
+        
+        .history-item:hover {
+            transform: scale(1.1) translateY(-12px);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+            border-top: 1px solid rgba(0,245,255,0.15);
+        }
+        
+        @keyframes pulse { 0%,100% {opacity:0.5;} 50% {opacity:1;} }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>QR<span style="color:#ff00ff;">NEON</span></h1>
+            <p class="subtitle">Proposals • Business • Magic Sharing</p>
+            
+            <div class="mode-toggle">
+                <div onclick="setMode(0)" class="mode-btn active" id="mode-romantic">💖 Romantic</div>
+                <div onclick="setMode(1)" class="mode-btn" id="mode-business">💼 Business</div>
+            </div>
+        </header>
+        
+        <div class="main">
+            <div class="templates">
+                <div class="template-chip" onclick="useTemplate(0)">💍 Will you marry me?</div>
+                <div class="template-chip" onclick="useTemplate(1)">❤️ I love you forever</div>
+                <div class="template-chip" onclick="useTemplate(2)">📍 Meet me here</div>
+                <div class="template-chip" onclick="useTemplate(3)">🏢 Company Link</div>
+            </div>
+            
+            <div class="input-group">
+                <label for="content">Your Message / Link</label>
+                <textarea id="content" rows="4" placeholder="Paste link or write heartfelt message..."></textarea>
+            </div>
+            
+            <div class="options">
+                <div>
+                    <label for="size">Size</label>
+                    <select id="size">
+                        <option value="260">Small</option>
+                        <option value="340" selected>Medium</option>
+                        <option value="440">Large</option>
+                        <option value="540">Huge</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="color">Neon Accent</label>
+                    <input type="color" id="color" value="#00f5ff">
+                </div>
+                <div>
+                    <label for="errorLevel">Error Correction</label>
+                    <select id="errorLevel">
+                        <option value="L">L - Low (7%)</option>
+                        <option value="M" selected>M - Medium (15%) ★ Recommended</option>
+                        <option value="Q">Q - Quartile (25%)</option>
+                        <option value="H">H - High (30%) - Best for logos/print</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button onclick="generateQR()" class="btn btn-primary">✨ Generate Magic QR ✨</button>
+            
+            <div id="qrcode">
+                <div id="placeholder" style="text-align:center;color:#555;font-size:1.1rem;">
+                    <span style="font-size:5rem;display:block;margin-bottom:16px;">🌟</span>
+                    Your glowing QR appears here
+                </div>
+            </div>
+            
+            <div class="actions" id="action-buttons">
+                <button onclick="downloadQR()" class="btn" style="background:#00f5ff;color:#000;">📥 Download PNG</button>
+                <button onclick="copyToClipboard()" class="btn" style="background:transparent;border:2px solid #ff00ff;color:#ff00ff;">📋 Copy Image</button>
+                <button onclick="shareQR()" class="btn" style="background:transparent;border:2px solid #00ffaa;color:#00ffaa;">🌐 Share</button>
+            </div>
+            
+            <div class="share-buttons" id="share-options">
+                <button onclick="shareToTwitter()" class="share-btn" style="background:#1da1f2;">𝕏</button>
+                <button onclick="shareToFacebook()" class="share-btn" style="background:#1877f2;">f</button>
+                <button onclick="shareToWhatsApp()" class="share-btn" style="background:#25d366;">💬</button>
+            </div>
+            
+            <div class="history">
+                <h3>✦ Recent Creations ✦</h3>
+                <div class="history-grid" id="history-grid"></div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            💕 Perfect for surprise proposals &amp; instant company sharing • Free &amp; Private
+        </div>
+    </div>
+
+    <script>
+        let currentQR = null;
+        let history = [];
+        let currentMode = 0;
+        
+        function setMode(mode) {
+            const oldMode = currentMode;
+            currentMode = mode;
+            
+            const romanticBtn = document.getElementById('mode-romantic');
+            const businessBtn = document.getElementById('mode-business');
+            
+            romanticBtn.classList.toggle('active', mode === 0);
+            businessBtn.classList.toggle('active', mode === 1);
+            
+            // Smooth color transition
+            const colorInput = document.getElementById('color');
+            const targetColor = mode === 0 ? "#ff00ff" : "#00f5ff";
+            
+            colorInput.style.transition = 'background 0.6s ease';
+            colorInput.value = targetColor;
+            
+            // Gentle mode switch flash
+            if (oldMode !== mode) {
+                const container = document.querySelector('.container');
+                container.style.transition = 'box-shadow 0.8s ease';
+                container.style.boxShadow = mode === 0 
+                    ? '0 0 90px -10px #ff00ff, 0 0 70px -15px #ff00ff' 
+                    : '0 0 90px -10px #00f5ff, 0 0 70px -15px #00f5ff';
+                
+                setTimeout(() => {
+                    container.style.boxShadow = '0 0 80px -15px var(--neon-cyan), 0 0 60px -15px var(--neon-pink)';
+                }, 800);
+            }
+        }
+        
+        function useTemplate(n) {
+            const texts = [
+                "Will you marry me? 💍 Scan to say YES!",
+                "I love you more than yesterday ❤️ Forever yours",
+                "Meet me at our special place 🌹",
+                "Visit our company website - Company Name"
+            ];
+            document.getElementById('content').value = texts[n];
+            setMode(n < 3 ? 0 : 1);
+        }
+        
+        function generateQR() {
+            const content = document.getElementById('content').value.trim();
+            if (!content) {
+                alert("Please enter a message or link 💖");
+                return;
+            }
+            
+            const size = parseInt(document.getElementById('size').value);
+            const color = document.getElementById('color').value;
+            const errorLevel = document.getElementById('errorLevel').value;
+            
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            qrContainer.classList.add('generated');
+            
+            const levelMap = {
+                'L': QRCode.CorrectLevel.L,
+                'M': QRCode.CorrectLevel.M,
+                'Q': QRCode.CorrectLevel.Q,
+                'H': QRCode.CorrectLevel.H
+            };
+            
+            currentQR = new QRCode(qrContainer, {
+                text: content,
+                width: size,
+                height: size,
+                colorDark: color,
+                colorLight: "#111111",
+                correctLevel: levelMap[errorLevel]
+            });
+            
+            setTimeout(() => {
+                const canvas = qrContainer.querySelector('canvas');
+                if (canvas) canvas.classList.add('qr-glow');
+                
+                if (currentMode === 0) {
+                    confetti({ particleCount: 180, spread: 80, origin: { y: 0.6 } });
+                }
+            }, 120);
+            
+            document.getElementById('action-buttons').style.display = 'flex';
+            document.getElementById('share-options').style.display = 'flex';
+            
+            addToHistory(content, size, color, errorLevel);
+        }
+        
+        function downloadQR() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (!canvas) return alert("Generate a QR code first!");
+            
+            try {
+                const link = document.createElement('a');
+                link.download = currentMode === 0 ? 'love-qrneon.png' : 'business-qrneon.png';
+                link.href = canvas.toDataURL('image/png', 1.0);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                const btn = event.currentTarget;
+                const original = btn.textContent;
+                btn.textContent = '✅ Downloaded!';
+                setTimeout(() => btn.textContent = original, 1800);
+            } catch (err) {
+                alert("Try right-click on the QR code → Save image as...");
+            }
+        }
+        
+        async function copyToClipboard() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (!canvas) return;
+            try {
+                const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+                await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+                alert('✅ Copied to clipboard!');
+            } catch(e) {
+                alert('Use Download button instead.');
+            }
+        }
+        
+        async function shareQR() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (!canvas) return;
+            try {
+                const blob = await new Promise(r => canvas.toBlob(r));
+                const file = new File([blob], 'qr-neon.png', { type: 'image/png' });
+                if (navigator.share) await navigator.share({ title: currentMode === 0 ? 'My Special QR 💕' : 'Company QR', files: [file] });
+            } catch(e) {}
+        }
+        
+        function shareToTwitter() {
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent("Check this glowing QR I made with QRNeon!")}`, '_blank');
+        }
+        function shareToFacebook() { window.open('https://www.facebook.com/sharer/sharer.php', '_blank'); }
+        function shareToWhatsApp() {
+            window.open(`https://wa.me/?text=${encodeURIComponent("Scan my special QR 💖")}`, '_blank');
+        }
+        
+        function addToHistory(content, size, color, errorLevel) {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (!canvas) return;
+            
+            history.unshift({
+                content: content.length > 30 ? content.substring(0,27)+'...' : content,
+                thumbnail: canvas.toDataURL('image/png', 0.8),
+                mode: currentMode
+            });
+            
+            if (history.length > 8) history.pop();
+            renderHistory();
+        }
+        
+        function renderHistory() {
+            const grid = document.getElementById('history-grid');
+            grid.innerHTML = '';
+            history.forEach((item, i) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <img src="${item.thumbnail}" width="130" height="130" style="border-radius:18px;border:2px solid ${item.mode===0?'#ff00ff':'#00f5ff'};">
+                    <p style="margin-top:8px;font-size:0.8rem;color:#aaa;">${item.content}</p>
+                `;
+                div.onclick = () => loadFromHistory(i);
+                grid.appendChild(div);
+            });
+        }
+        
+        function loadFromHistory(i) {
+            const item = history[i];
+            document.getElementById('content').value = item.content;
+            setMode(item.mode);
+            generateQR();
+        }
+        
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && document.getElementById('content') === document.activeElement) generateQR();
+        });
+        
+        window.onload = () => {
+            setTimeout(() => {
+                document.getElementById('content').value = "https://example.com";
+            }, 600);
+        };
+    </script>
+</body>
+</html>
